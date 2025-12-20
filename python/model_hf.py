@@ -2,6 +2,11 @@ import torch
 import gc
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, infer_device
 
+
+# codellama 7b (>=)
+# Llama 3.1
+# Qwen 3-8b
+
 class Model:
     def __init__(self, name):
         if torch.cuda.is_available():

@@ -1,92 +1,116 @@
 import pandas as pd
 
+from prompts.prompts import prompts_templates
 from model_hf import Model
 
-models = []
+# TODO: check names in documentation
+models = [
+    "gpt-3.5-turbo",
+    "gpt-4o-mini",
+    "gpt-5-mini",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "codellama-7b",  # and above maybe
+    "Llama-3.1",
+    "Qwen-3-8b"
+]
+
+prompt_types = ['zero_shot', 'supervised', 'over_supervised']
 
 
 def infer_ocean(dataset, experiment):
     if experiment == 1:
         df = dataset.rename(columns={'src_code': 'input', 'tgt_code': 'target'})
-        output = adversarial_prompting(df, "CodeOcean")
-    elif experiment == 2:
-        df = dataset[['input', 'target']]
-        output = df.copy()
-        for m in models:
-            model = Model(m)
-            output[m] = model.infer('<prompt>' + output['input'])
-            model.unload()
-    else:
-        df = dataset[['name', 'java_code']]
-        output = df.copy()
-        for m in models:
-            model = Model(m)
-            output[m] = model.infer('<prompt>' + output['name'])
-            model.unload()
 
-    return output
+        return run_inference(
+            df=df,
+            dataset_name="CodeOcean",
+            experiment="m1",
+            extra_fields_fn=lambda r: {
+                "src_lang": r["src_lang"],
+                "tgt_lang": r["tgt_lang"],
+            })
+    elif experiment == 2:
+        df = dataset[["index", "input", "target"]].rename(columns={"index": "id"})
+        return run_inference(
+            df=df,
+            dataset_name="CodeOcean",
+            experiment="m3",
+        )
+    else:
+        df = dataset[["id", "name", "java_code"]].rename(
+            columns={"java_code": "input", "name": "target"}
+        )
+
+        return run_inference(
+            df=df,
+            dataset_name="CodeOcean",
+            experiment="m3",
+        )
 
 
 def infer_trans(dataset, experiment):
     if experiment == 1:
-        df = dataset[['java_line', 'cs_line']]
-        df = df.rename(columns={'java_line': 'input', 'cs_line': 'target'})
+        df = dataset[['id', 'java_line', 'cs_line']].rename(
+            columns={'java_line': 'input', 'cs_line': 'target', 'id': 'index'}
+        )
         df['src_lang'] = 'java'
         df['tgt_lang'] = 'cs'
-        output = adversarial_prompting(df, "CodeTrans")
+
+        return run_inference(
+            df=df,
+            dataset_name="CodeTrans",
+            experiment="m1",
+            extra_fields_fn=lambda r: {
+                "src_lang": r["src_lang"],
+                "tgt_lang": r["tgt_lang"],
+            })
     elif experiment == 2:
-        df = dataset[['input', 'target']]
-        output = df.copy()
-        for m in models:
-            model = Model(m)
-            output[m] = model.infer('<prompt>' + output['input'])
-            model.unload()
+        df = dataset[['index', 'input', 'target']].rename(columns={"index": "id"})
+        return run_inference(
+            df=df,
+            dataset_name="CodeTrans",
+            experiment="m3",
+        )
     else:
-        df = dataset[['group', 'input', 'target']]
-        output = df.copy()
-        for m in models:
-            model = Model(m)
-            output[m] = model.infer('<prompt>' + output['input'])
-            model.unload()
-    return output
+        df = dataset[["index", "group", "input", "target"]].rename(
+            columns={"index": "id"}
+        )
+
+        return run_inference(
+            df=df,
+            dataset_name="CodeTrans",
+            experiment="m3",
+            extra_fields_fn=lambda r: {"group": r["group"]},
+        )
 
 
-def adversarial_prompting(df, dataset):
-    # Do we need input here? Or even target, could just save an id for reference
-    output = pd.DataFrame(columns=['model', 'prompting', 'src_lang', 'tgt_lang', 'input', 'target', 'output'])
-    prompt_types = ['zero_shot', 'supervised', 'over_supervised']
-
-    input_dict = df.T.to_dict.values()
+def run_inference(df, dataset_name, experiment, extra_fields_fn=None):
+    rows = []
+    records = df.to_dict(orient="records")
 
     for m in models:
-        model = Model(m)  # to be specified further when the models are chosen
+        model = Model(m)
+        try:
+            for r in records:
+                for prompt_type in prompt_types:
+                    prompt = prompts_templates[dataset_name][experiment][prompt_type]
+                    # TODO: Make sure to check for m3 if there are additional fields needed
+                    output = model.infer(prompt.format(r["input"]))
 
-        for i in input_dict:
-            input_code = i['input']
-            for prompt_type in prompt_types:
-                o = model.infer(prompting(prompt_type, input_code, dataset))
-                r = pd.DataFrame({
-                    'model': m,
-                    'prompting': prompt_type,
-                    'src_lang': i['src_lang'],
-                    'tgt_lang': i['tgt_lang'],
-                    'input': input_code,
-                    'target': i['target'],
-                    'output': o
-                })
+                    row = {
+                        "id": r["id"],
+                        "model": m,
+                        "prompting": prompt_type,
+                        "target": r["target"],
+                        "output": output,
+                    }
 
-                output = pd.concat([output, r])
+                    if extra_fields_fn:
+                        row.update(extra_fields_fn(r))
 
-        model.unload()
+                    rows.append(row)
+        finally:
+            model.unload()
 
-    return output
-
-
-def prompting(prompting_type, code, dataset):
-    if prompting_type == 'zero_shot':
-        return '<prompt>' + code
-    elif prompting_type == 'supervised':
-        return '<prompt>' + code
-    else:
-        # use dataset param here
-        return '<prompt>' + code
+    return pd.DataFrame(rows)

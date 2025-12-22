@@ -12,7 +12,7 @@ def run(data, experiment):
     else:
         results = infer_ocean(dataset, experiment)
 
-    write_results(results, data + "_" + experiment)
+    write_results(results, data + "_" + str(experiment))
 
 
 if __name__ == "__main__":

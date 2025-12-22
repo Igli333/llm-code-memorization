@@ -1,21 +1,24 @@
 import pandas as pd
 
-from prompts.prompts import prompts_templates
+from prompts import prompts_templates
 from model_hf import Model
+from models_api import ModelApi
 
-# TODO: check names in documentation
-models = [
+models_api = [
     "gpt-3.5-turbo",
     "gpt-4o-mini",
     "gpt-5-mini",
     "gemini-2.5-pro",
-    "gemini-2.5-flash",
-    "codellama-7b",  # and above maybe
-    "Llama-3.1",
-    "Qwen-3-8b"
+    "gemini-2.5-flash"
 ]
 
-prompt_types = ['zero_shot', 'supervised', 'over_supervised']
+models_hf = [
+    "codellama/CodeLlama-7b-hf",  # Also codellama/CodeLlama-13b-hf and codellama/CodeLlama-34b-hf
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "Qwen/Qwen3-8B-Instruct"
+]
+
+prompt_types = ['zero_shot_prompt', 'supervised_prompt', 'over_supervised_prompt']
 
 
 def infer_ocean(dataset, experiment):
@@ -24,7 +27,7 @@ def infer_ocean(dataset, experiment):
 
         return run_inference(
             df=df,
-            dataset_name="CodeOcean",
+            dataset_name="codeocean",
             experiment="m1",
             extra_fields_fn=lambda r: {
                 "src_lang": r["src_lang"],
@@ -34,7 +37,7 @@ def infer_ocean(dataset, experiment):
         df = dataset[["index", "input", "target"]].rename(columns={"index": "id"})
         return run_inference(
             df=df,
-            dataset_name="CodeOcean",
+            dataset_name="codeocean",
             experiment="m3",
         )
     else:
@@ -44,22 +47,22 @@ def infer_ocean(dataset, experiment):
 
         return run_inference(
             df=df,
-            dataset_name="CodeOcean",
+            dataset_name="codeocean",
             experiment="m3",
         )
 
 
 def infer_trans(dataset, experiment):
     if experiment == 1:
-        df = dataset[['id', 'java_line', 'cs_line']].rename(
-            columns={'java_line': 'input', 'cs_line': 'target', 'id': 'index'}
+        df = dataset[['index', 'java_line', 'cs_line']].rename(
+            columns={'java_line': 'input', 'cs_line': 'target', 'index': 'id'}
         )
         df['src_lang'] = 'java'
         df['tgt_lang'] = 'cs'
 
         return run_inference(
             df=df,
-            dataset_name="CodeTrans",
+            dataset_name="codetrans",
             experiment="m1",
             extra_fields_fn=lambda r: {
                 "src_lang": r["src_lang"],
@@ -69,7 +72,7 @@ def infer_trans(dataset, experiment):
         df = dataset[['index', 'input', 'target']].rename(columns={"index": "id"})
         return run_inference(
             df=df,
-            dataset_name="CodeTrans",
+            dataset_name="codetrans",
             experiment="m3",
         )
     else:
@@ -79,7 +82,7 @@ def infer_trans(dataset, experiment):
 
         return run_inference(
             df=df,
-            dataset_name="CodeTrans",
+            dataset_name="codetrans",
             experiment="m3",
             extra_fields_fn=lambda r: {"group": r["group"]},
         )
@@ -89,28 +92,42 @@ def run_inference(df, dataset_name, experiment, extra_fields_fn=None):
     rows = []
     records = df.to_dict(orient="records")
 
-    for m in models:
+    for m in models_api:
+        model = ModelApi(m)
+        rows.extend(infer(model, m, records, dataset_name, experiment, extra_fields_fn))
+
+    for m in models_hf:
         model = Model(m)
         try:
-            for r in records:
-                for prompt_type in prompt_types:
-                    prompt = prompts_templates[dataset_name][experiment][prompt_type]
-                    # TODO: Make sure to check for m3 if there are additional fields needed
-                    output = model.infer(prompt.format(r["input"]))
-
-                    row = {
-                        "id": r["id"],
-                        "model": m,
-                        "prompting": prompt_type,
-                        "target": r["target"],
-                        "output": output,
-                    }
-
-                    if extra_fields_fn:
-                        row.update(extra_fields_fn(r))
-
-                    rows.append(row)
+            rows.extend(infer(model, m, records, dataset_name, experiment, extra_fields_fn))
         finally:
             model.unload()
 
     return pd.DataFrame(rows)
+
+
+def infer(model, model_name, records, dataset_name, experiment, extra_fields_fn=None):
+    rows = []
+    for r in records:
+        for prompt_type in prompt_types:
+            prompt = prompts_templates[dataset_name][experiment][prompt_type]
+
+            output = model.infer(prompt.format(r["input"]))
+
+            # TODO: Perform some code extraction from text responses, language models
+            #       tend to not return only code no matter how much they are persuaded
+            #       to do so.
+
+            row = {
+                "id": r["id"],
+                "model": model_name,
+                "prompting": prompt_type,
+                "target": r["target"],
+                "output": output,
+            }
+
+            if extra_fields_fn:
+                row.update(extra_fields_fn(r))
+
+            rows.append(row)
+    return rows

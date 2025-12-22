@@ -24,7 +24,7 @@ OPEN_AI_KEY = os.getenv("OPEN_AI_KEY")
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 
 
-class Model_API():
+class ModelApi():
     def __init__(self, model_name):
         self.model_name = model_name
 

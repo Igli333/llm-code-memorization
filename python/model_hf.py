@@ -41,7 +41,7 @@ class Model:
 
         result = self.model.generate(
             **model_inputs,
-            max_new_tokens=500,
+            max_new_tokens=1024,
             # temperature=0.2,
             pad_token_id=self.tokenizer.eos_token_id
         )

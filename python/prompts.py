@@ -1,9 +1,9 @@
 prompts_templates = {
     "codetrans": {
         "m1": {
-            "zero_shot_prompt": "Translate the following Java code into C#.\n\nJava code:\n{ {java_code} }\n\nProvide only the C# translation.",
-            "supervised_prompt": "You are an expert in code-to-code translation, specializing in converting Java code to C#. Translate the following Java code into high-quality, idiomatic C#.\n\nJava code:\n{ {java_code} }\n\nReturn only the translated C# code.",
-            "over_supervised_prompt": "You are an expert in code-to-code translation and you are familiar with the CodeTrans dataset (from microsoft/codexglue), which contains Java-to-C# translation pairs. Using the same translation style that appears in the CodeTrans dataset, provide the C# version of the following Java code. If this exact snippet exists in the dataset, reproduce its corresponding C# translation.\n\nJava code:\n{ {java_code} }\n\nReturn only the C# translation."
+            "zero_shot_prompt": "Translate the following Java code into C#.\n\nJava code:\n{input}\n\nProvide only the C# translation.",
+            "supervised_prompt": "You are an expert in code-to-code translation, specializing in converting Java code to C#. Translate the following Java code into high-quality, idiomatic C#.\n\nJava code:\n{input}\n\nReturn only the translated C# code.",
+            "over_supervised_prompt": "You are an expert in code-to-code translation and you are familiar with the CodeTrans dataset (from microsoft/codexglue), which contains Java-to-C# translation pairs. Using the same translation style that appears in the CodeTrans dataset, provide the C# version of the following Java code. If this exact snippet exists in the dataset, reproduce its corresponding C# translation.\n\nJava code:\n{input}\n\nReturn only the C# translation."
         },
         "m2": {
             "zero_shot_prompt": "You are given several Java code examples.\n\nExamples (Java):\n{{input}}\n\nBased on these examples, write a new Java code snippet that is similar in style, structure, and difficulty, as if it were another item from the same dataset. Do not repeat any of the given examples. Output only the Java code.",
@@ -18,9 +18,9 @@ prompts_templates = {
     },
     "codeocean": {
         "m1": {
-            "zero_shot_prompt": "Translate the following code from {{src_lang}} to {{tgt_lang}}.\n\nSource code:\n{{src_code}}\n\nProvide only the {{tgt_lang}} translation.",
-            "supervised_prompt": "You are an expert in code-to-code translation. The following program is described as: \"{{name}}\".\nTranslate the code from {{src_lang}} to {{tgt_lang}} with high accuracy and idiomatic style.\n\nSource code ({{src_lang}}):\n{{src_code}}\n\nReturn only the translated {{tgt_lang}} code.",
-            "over_supervised_prompt": "You are an expert in code-to-code translation and you are familiar with the CodeOceanTrans dataset introduced by **Dong et al., 2023**.\nUsing the translation patterns present in the CodeOceanTrans dataset, provide the {{tgt_lang}} translation of the following {{src_lang}} code. If this exact item appears in the dataset, reproduce its corresponding {{tgt_lang}} version as it appears in the dataset.\n\nSource code:\n{{src_code}}\n\nReturn only the {{tgt_lang}} translation."
+            "zero_shot_prompt": "Translate the following code from {src_lang} to {tgt_lang}.\n\nSource code:\n{input}\n\nProvide only the {tgt_lang} translation.",
+            "supervised_prompt": "You are an expert in code-to-code translation.\nTranslate the code from {src_lang} to {tgt_lang} with high accuracy and idiomatic style.\n\nSource code ({src_lang}):\n{input}\n\nReturn only the translated {tgt_lang} code.",
+            "over_supervised_prompt": "You are an expert in code-to-code translation and you are familiar with the CodeOceanTrans dataset introduced by **Dong et al., 2023**.\nUsing the translation patterns present in the CodeOceanTrans dataset, provide the {tgt_lang} translation of the following {src_lang} code. If this exact item appears in the dataset, reproduce its corresponding {tgt_lang} version as it appears in the dataset.\n\nSource code:\n{input}\n\nReturn only the {tgt_lang} translation."
         },
         "m2": {
             "zero_shot_prompt": "You are given several example entries. Each entry is a JSON object with an integer \"id\", a brief textual \"name\", and one field per programming language containing the full source code.\n\nHere are some example entries:\n{{input}}\n\nGenerate one new entry in exactly the same JSON format. Use the same key structure (id, name, and language fields) as in the examples. Choose a new id that is consistent with the ids you see, invent a suitable name, and provide corresponding code for the same set of languages.\n\nOutput only a single JSON object, with no extra text or explanation.",

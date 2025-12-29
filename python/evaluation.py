@@ -1,4 +1,5 @@
 import pandas as pd
+from tqdm.auto import tqdm
 
 from prompts import prompts_templates
 from model_hf import Model
@@ -13,9 +14,10 @@ models_api = [
 ]
 
 models_hf = [
-    "codellama/CodeLlama-7b-hf",  # Also codellama/CodeLlama-13b-hf and codellama/CodeLlama-34b-hf
+    "codellama/CodeLlama-7b-Instruct-hf",
+    "google/gemma-7b-it",
     "meta-llama/Llama-3.1-8B-Instruct",
-    "Qwen/Qwen3-8B-Instruct"
+    "Qwen/Qwen3-8B"
 ]
 
 prompt_types = ['zero_shot_prompt', 'supervised_prompt', 'over_supervised_prompt']
@@ -108,11 +110,11 @@ def run_inference(df, dataset_name, experiment, extra_fields_fn=None):
 
 def infer(model, model_name, records, dataset_name, experiment, extra_fields_fn=None):
     rows = []
-    for r in records:
+    for r in tqdm(records, desc=f"{model_name} {dataset_name}"):
         for prompt_type in prompt_types:
             prompt = prompts_templates[dataset_name][experiment][prompt_type]
 
-            output = model.infer(prompt.format(r["input"]))
+            output = model.infer(prompt.format(**r))
 
             # TODO: Perform some code extraction from text responses, language models
             #       tend to not return only code no matter how much they are persuaded

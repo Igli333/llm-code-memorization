@@ -1,14 +1,10 @@
 # import litellm thingy
 import os
-import litellm
-
-from transformers import AutoTokenizer
 from dotenv import load_dotenv
 from litellm import completion
 
-litellm.set_verbose = True
-litellm.success_callback = ["langfuse"]
-litellm.failure_callback = ["langfuse"]
+os.environ['LITELLM_LOG'] = 'DEBUG'
+
 
 
 # gpt-3.5 turbo
@@ -30,7 +26,7 @@ class ModelApi():
 
     def infer(self, prompt):
         response = completion(
-            model_name=self.model_name,
+            model=self.model_name,
             messages=[
                 {"role": "user", "content": prompt},
             ]

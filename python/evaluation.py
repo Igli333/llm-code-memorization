@@ -1,135 +1,94 @@
 import pandas as pd
 from tqdm.auto import tqdm
+from typing import List, Dict, Any
 
+# Assuming these are your custom modules
 from prompts import prompts_templates
-from model_hf import Model
+# from model_hf import Model
 from models_api import ModelApi
 
-models_api = [
-    "gpt-3.5-turbo",
-    "gpt-4o-mini",
-    "gpt-5-mini",
-    "gemini-2.5-pro",
-    "gemini-2.5-flash"
+# Configuration
+MODELS_API = [
+     #"gpt-3.5-turbo", 
+    # "gpt-4o-mini", 
+    "gpt-5.2",
+    "openrouter/openai/gpt-oss-120b",
+    "openrouter/meta-llama/llama-3.3-70b-instruct",
+    "openrouter/openai/gpt-5-mini",
+    "openrouter/google/gemini-2.5-flash",
+    "openrouter/google/gemini-3-flash-preview",
+    "openrouter/qwen/qwen3-coder", 
+    # "gemini-2.5-pro", 
+    # "gemini-2.5-flash"
 ]
 
-models_hf = [
-    "codellama/CodeLlama-7b-Instruct-hf",
-    "google/gemma-7b-it",
-    "meta-llama/Llama-3.1-8B-Instruct",
-    "Qwen/Qwen3-8B"
+MODELS_HF = [
+    # "codellama/CodeLlama-7b-Instruct-hf",
+    # "google/gemma-7b-it",
+    # "meta-llama/Llama-3.1-8B-Instruct",
+    # "Qwen/Qwen3-8B"
 ]
 
-prompt_types = ['zero_shot_prompt', 'supervised_prompt', 'over_supervised_prompt']
+PROMPT_TYPES = ['supervised_prompt']
 
 
-def infer_ocean(dataset, experiment):
-    if experiment == 1:
-        df = dataset.rename(columns={'src_code': 'input', 'tgt_code': 'target'})
-
-        return run_inference(
-            df=df,
-            dataset_name="codeocean",
-            experiment="m1",
-            extra_fields_fn=lambda r: {
-                "src_lang": r["src_lang"],
-                "tgt_lang": r["tgt_lang"],
-            })
-    elif experiment == 2:
-        df = dataset[["index", "input", "target"]].rename(columns={"index": "id"})
-        return run_inference(
-            df=df,
-            dataset_name="codeocean",
-            experiment="m3",
-        )
-    else:
-        df = dataset[["id", "name", "java_code"]].rename(
-            columns={"java_code": "input", "name": "target"}
-        )
-
-        return run_inference(
-            df=df,
-            dataset_name="codeocean",
-            experiment="m3",
-        )
-
-
-def infer_trans(dataset, experiment):
-    if experiment == 1:
-        df = dataset[['index', 'java_line', 'cs_line']].rename(
-            columns={'java_line': 'input', 'cs_line': 'target', 'index': 'id'}
-        )
-        df['src_lang'] = 'java'
-        df['tgt_lang'] = 'cs'
-
-        return run_inference(
-            df=df,
-            dataset_name="codetrans",
-            experiment="m1",
-            extra_fields_fn=lambda r: {
-                "src_lang": r["src_lang"],
-                "tgt_lang": r["tgt_lang"],
-            })
-    elif experiment == 2:
-        df = dataset[['index', 'input', 'target']].rename(columns={"index": "id"})
-        return run_inference(
-            df=df,
-            dataset_name="codetrans",
-            experiment="m3",
-        )
-    else:
-        df = dataset[["index", "group", "input", "target"]].rename(
-            columns={"index": "id"}
-        )
-
-        return run_inference(
-            df=df,
-            dataset_name="codetrans",
-            experiment="m3",
-            extra_fields_fn=lambda r: {"group": r["group"]},
-        )
-
-
-def run_inference(df, dataset_name, experiment, extra_fields_fn=None):
-    rows = []
+def run_experiment(
+    df: pd.DataFrame, 
+    dataset_name: str, 
+    experiment_id: str
+) -> pd.DataFrame:
+    """
+    Runs inference across all models. Preserves all original columns from df.
+    """
+    results = []
     records = df.to_dict(orient="records")
 
-    for m in models_api:
-        model = ModelApi(m)
-        rows.extend(infer(model, m, records, dataset_name, experiment, extra_fields_fn))
+    # 1. API-based Models
+    for model_name in MODELS_API:
+        model_engine = ModelApi(model_name)
+        results.extend(_infer_loop(model_engine, model_name, records, dataset_name, experiment_id))
 
-    for m in models_hf:
-        model = Model(m)
+    # 2. HuggingFace Models (with automated memory cleanup)
+    for model_name in MODELS_HF:
+        model_engine = Model(model_name)
         try:
-            rows.extend(infer(model, m, records, dataset_name, experiment, extra_fields_fn))
+            results.extend(_infer_loop(model_engine, model_name, records, dataset_name, experiment_id))
         finally:
-            model.unload()
+            model_engine.unload()
 
-    return pd.DataFrame(rows)
+    return pd.DataFrame(results)
 
 
-def infer(model, model_name, records, dataset_name, experiment, extra_fields_fn=None):
+def _infer_loop(
+    model_engine: Any,
+    model_name: str,
+    records: List[Dict],
+    dataset_name: str,
+    experiment_id: str
+) -> List[Dict]:
+    """
+    Internal helper to iterate through records and prompt types.
+    """
     rows = []
-    for r in tqdm(records, desc=f"{model_name} {dataset_name}"):
-        for prompt_type in prompt_types:
-            prompt = prompts_templates[dataset_name][experiment][prompt_type]
+    
+    for record in tqdm(records, desc=f"[{dataset_name}] {model_name}"):
+        for p_type in PROMPT_TYPES:
+            # Retrieve template
+            template = prompts_templates[dataset_name][experiment_id][p_type]
+            
+            # Format using raw record keys
+            prompt_text = template.format(**record)
 
-            output = model.infer(prompt.format(**r))
+            # Direct inference (No extraction)
+            output = model_engine.infer(prompt_text)
 
-            # TODO: Perform some code extraction from text responses, language models
-            #       tend to not return only code no matter how much they are persuaded
-            #       to do so.
-
+            # Create row preserving all original columns + new metadata
             row = {
-                "id": r["id"],
-                "model": model_name,
-                "prompting": prompt_type,
-                "target": r["target"],
-                "output": output,
+                **record, 
+                "model_name": model_name,
+                "prompt_type": p_type,
+                "model_output": output
             }
-
-            if extra_fields_fn:
-                row.update(extra_fields_fn(r))
-
             rows.append(row)
+            
     return rows

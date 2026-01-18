@@ -5,4 +5,4 @@ def read_dataset(name):
 
 def write_results(results, name):
     path = './data/results/'
-    results.to_csv(path + name + '.csv', sep='\t', encoding='utf-8', index=False, header=True)
+    results.to_json(path + name + '.jsonl', orient="records", lines=True)

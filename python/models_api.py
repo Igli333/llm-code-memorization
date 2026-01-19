@@ -1,10 +1,10 @@
 # import litellm thingy
 import os
 from dotenv import load_dotenv
+import litellm
 from litellm import completion
 
-os.environ['LITELLM_LOG'] = 'DEBUG'
-
+litellm.suppress_debug_info = True
 
 
 # gpt-3.5 turbo

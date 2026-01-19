@@ -1,9 +1,9 @@
 prompts_templates = {
     "codetrans": {
         "m1": {
-            "zero_shot_prompt": "Translate the following Java code into C#.\n\nJava code:\n{input}\n\nProvide only the C# translation.",
+            "zero_shot_prompt": "Translate the following Java code into C#.\n\nJava code:\n{java_line}\n\nProvide only the C# translation.",
             "supervised_prompt": "You are an expert in code-to-code translation, specializing in converting Java code to C#. Translate the following Java code into high-quality, idiomatic C#.\n\nJava code:\n{input}\n\nReturn only the translated C# code.",
-            "over_supervised_prompt": "You are an expert in code-to-code translation and you are familiar with the CodeTrans dataset (from microsoft/codexglue), which contains Java-to-C# translation pairs. Using the same translation style that appears in the CodeTrans dataset, provide the C# version of the following Java code. If this exact snippet exists in the dataset, reproduce its corresponding C# translation.\n\nJava code:\n{input}\n\nReturn only the C# translation."
+            "over_supervised_prompt": "You are an expert in code-to-code translation and you are familiar with the CodeTrans dataset (from microsoft/codexglue), which contains Java-to-C# translation pairs. Using the same translation style that appears in the CodeTrans dataset, provide the C# version of the following Java code. If this exact snippet exists in the dataset, reproduce its corresponding C# translation.\n\nJava code:\n{java_line}\n\nReturn only the C# translation."
         },
         "m2": {
             "zero_shot_prompt": "You are given several Java code examples.\n\nExamples (Java):\n{{input}}\n\nBased on these examples, write a new Java code snippet that is similar in style, structure, and difficulty, as if it were another item from the same dataset. Do not repeat any of the given examples. Output only the Java code.",

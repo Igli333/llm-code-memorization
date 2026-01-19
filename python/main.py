@@ -30,15 +30,19 @@ def main():
     # 1. Load the data
     print(f"--- Loading dataset: {args.dataset_path} ---")
     dataset = read_dataset(args.dataset_path)
-    
-    total_sample_size = 100
-    n_types = dataset['type'].nunique()
-    samples_per_type = total_sample_size // n_types
-    dataset = dataset.groupby('type', group_keys=False).apply(
-        lambda x: x.sample(samples_per_type, random_state=42)
-    )
 
-    print(dataset['type'].value_counts())
+    if args.experiment_id=='m4':
+        total_sample_size = 100
+        n_types = dataset['type'].nunique()
+        samples_per_type = total_sample_size // n_types
+        dataset = dataset.groupby('type', group_keys=False).apply(
+            lambda x: x.sample(samples_per_type, random_state=42)
+        )
+        print(dataset['type'].value_counts())
+    elif args.experiment_id=='m1':
+        dataset = dataset.sample(100, random_state=42)
+    else:
+        raise NotImplementedError("Experiment not implemented")
 
     # 2. Determine Dataset Type
     # We use the filename to decide which prompts to pull

@@ -9,17 +9,26 @@ from models_api import ModelApi
 
 # Configuration
 MODELS_API = [
-     #"gpt-3.5-turbo", 
-    # "gpt-4o-mini", 
-    "gpt-5.2",
-    "openrouter/openai/gpt-oss-120b",
-    "openrouter/meta-llama/llama-3.3-70b-instruct",
+    # GPT
     "openrouter/openai/gpt-5-mini",
+    "openrouter/openai/gpt-5.2",
+
+    # GPT-oss
+    "openrouter/openai/gpt-oss-120b",
+    "openrouter/openai/gpt-oss-20b",
+
+    # Gemini
     "openrouter/google/gemini-2.5-flash",
     "openrouter/google/gemini-3-flash-preview",
-    "openrouter/qwen/qwen3-coder", 
-    # "gemini-2.5-pro", 
-    # "gemini-2.5-flash"
+
+    # llama
+    "openrouter/meta-llama/llama-3.3-70b-instruct",
+    "openrouter/meta-llama/llama-4-scout",
+    "openrouter/meta-llama/llama-4-maverick",
+    
+    # llama
+    "openrouter/qwen/qwen3-coder",
+    "openrouter/qwen/qwen3-coder-30b-a3b-instruct"
 ]
 
 MODELS_HF = [
@@ -28,9 +37,6 @@ MODELS_HF = [
     # "meta-llama/Llama-3.1-8B-Instruct",
     # "Qwen/Qwen3-8B"
 ]
-
-PROMPT_TYPES = ['supervised_prompt']
-
 
 def run_experiment(
     df: pd.DataFrame, 
@@ -72,7 +78,7 @@ def _infer_loop(
     rows = []
     
     for record in tqdm(records, desc=f"[{dataset_name}] {model_name}"):
-        for p_type in PROMPT_TYPES:
+        for p_type in prompts_templates[dataset_name][experiment_id].keys():
             # Retrieve template
             template = prompts_templates[dataset_name][experiment_id][p_type]
             

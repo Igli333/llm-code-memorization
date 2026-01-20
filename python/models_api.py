@@ -29,7 +29,9 @@ class ModelApi():
             model=self.model_name,
             messages=[
                 {"role": "user", "content": prompt},
-            ]
+            ],
+            num_retries=5,
+            timeout=60,
         )
 
         return response.choices[0].message.content

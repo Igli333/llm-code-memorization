@@ -32,14 +32,24 @@ def main():
     print(f"--- Loading dataset: {args.dataset_path} ---")
     dataset = read_dataset(args.dataset_path)
 
-    if args.experiment_id=='m4':
-        total_sample_size = 200
-        n_types = dataset['type'].nunique()
-        samples_per_type = total_sample_size // n_types
-        dataset = dataset.groupby('type', group_keys=False).apply(
-            lambda x: x.sample(samples_per_type, random_state=42)
+    if args.experiment_id == 'm4':
+        total_sample_size = 400
+
+        # Shuffle first (same technique as m1)
+        dataset = dataset.sample(frac=1, random_state=42).reset_index(drop=True)
+
+        # Count unique combinations of type and lang
+        n_groups = dataset.groupby(['type', 'lang']).ngroups
+        samples_per_group = total_sample_size // n_groups
+
+        # Stratified sampling across (type, lang)
+        dataset = (
+            dataset
+            .groupby(['type', 'lang'], group_keys=False)
+            .apply(lambda x: x.head(samples_per_group))
         )
-        print(dataset['type'].value_counts())
+
+        print(dataset.groupby('lang')['type'].value_counts())
     elif args.experiment_id=='m1':
         # Shuffle then get head for incremental sampling
         dataset = dataset.sample(frac=1, random_state=42).reset_index(drop=True)

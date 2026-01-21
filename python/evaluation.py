@@ -1,6 +1,7 @@
 import pandas as pd
 from tqdm.auto import tqdm
 from typing import List, Dict, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Assuming these are your custom modules
 from prompts import prompts_templates
@@ -26,7 +27,7 @@ MODELS_API = [
     "openrouter/meta-llama/llama-4-scout",
     "openrouter/meta-llama/llama-4-maverick",
     
-    # llama
+    # # llama
     "openrouter/qwen/qwen3-coder",
     "openrouter/qwen/qwen3-coder-30b-a3b-instruct"
 ]
@@ -37,6 +38,28 @@ MODELS_HF = [
     # "meta-llama/Llama-3.1-8B-Instruct",
     # "Qwen/Qwen3-8B"
 ]
+
+def _infer_single(
+    model_engine: Any,
+    model_name: str,
+    record: Dict,
+    dataset_name: str,
+    experiment_id: str,
+    p_type: str
+) -> Dict:
+    """
+    Perform inference for a single record and prompt type.
+    """
+    template = prompts_templates[dataset_name][experiment_id][p_type]
+    prompt_text = template.format(**record)
+    output = model_engine.infer(prompt_text)
+    row = {
+        **record,
+        "model_name": model_name,
+        "prompt_type": p_type,
+        "model_output": output
+    }
+    return row
 
 def run_experiment(
     df: pd.DataFrame, 
@@ -73,28 +96,19 @@ def _infer_loop(
     experiment_id: str
 ) -> List[Dict]:
     """
-    Internal helper to iterate through records and prompt types.
+    Internal helper to iterate through records and prompt types in parallel.
     """
-    rows = []
+    prompt_types = list(prompts_templates[dataset_name][experiment_id].keys())
+    total_tasks = len(records) * len(prompt_types)
     
-    for record in tqdm(records, desc=f"[{dataset_name}] {model_name}"):
-        for p_type in prompts_templates[dataset_name][experiment_id].keys():
-            # Retrieve template
-            template = prompts_templates[dataset_name][experiment_id][p_type]
-            
-            # Format using raw record keys
-            prompt_text = template.format(**record)
-
-            # Direct inference (No extraction)
-            output = model_engine.infer(prompt_text)
-
-            # Create row preserving all original columns + new metadata
-            row = {
-                **record, 
-                "model_name": model_name,
-                "prompt_type": p_type,
-                "model_output": output
-            }
-            rows.append(row)
-            
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [
+            executor.submit(_infer_single, model_engine, model_name, record, dataset_name, experiment_id, p_type)
+            for record in records
+            for p_type in prompt_types
+        ]
+        rows = []
+        for future in tqdm(as_completed(futures), total=total_tasks, desc=f"[{dataset_name}] {model_name}"):
+            rows.append(future.result())
+    
     return rows

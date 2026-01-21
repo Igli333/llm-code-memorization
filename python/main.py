@@ -41,7 +41,9 @@ def main():
         )
         print(dataset['type'].value_counts())
     elif args.experiment_id=='m1':
-        dataset = dataset.sample(100, random_state=42)
+        # Shuffle then get head for incremental sampling
+        dataset = dataset.sample(frac=1, random_state=42).reset_index(drop=True)
+        dataset = dataset.head(100)
     else:
         raise NotImplementedError("Experiment not implemented")
 

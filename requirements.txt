@@ -1,5 +1,10 @@
 pandas
-transformers
-litellm
-accelerate
+litellm==1.80.11
 tqdm
+langfuse==3.11.2
+tree-sitter 
+tree-sitter-java 
+tree-sitter-c-sharp
+matplotlib
+seaborn
+

@@ -32,30 +32,26 @@ def main():
     print(f"--- Loading dataset: {args.dataset_path} ---")
     dataset = read_dataset(args.dataset_path)
 
-    if args.experiment_id == 'm4':
-        total_sample_size = 400
+    # if args.experiment_id == 'm4':
+    #     # Shuffle first (same technique as m1)
+    #     dataset = dataset.sample(frac=1, random_state=42).reset_index(drop=True)
 
-        # Shuffle first (same technique as m1)
-        dataset = dataset.sample(frac=1, random_state=42).reset_index(drop=True)
+    #     # Count unique combinations of type and lang
 
-        # Count unique combinations of type and lang
-        n_groups = dataset.groupby(['type', 'lang']).ngroups
-        samples_per_group = total_sample_size // n_groups
+    #     # Stratified sampling across (type, lang)
+    #     dataset = (
+    #         dataset
+    #         .groupby(['type', 'lang'], group_keys=False)
+    #         .apply(lambda x: x.iloc[0:250])
+    #     )
 
-        # Stratified sampling across (type, lang)
-        dataset = (
-            dataset
-            .groupby(['type', 'lang'], group_keys=False)
-            .apply(lambda x: x.head(samples_per_group))
-        )
-
-        print(dataset.groupby('lang')['type'].value_counts())
-    elif args.experiment_id=='m1':
-        # Shuffle then get head for incremental sampling
-        dataset = dataset.sample(frac=1, random_state=42).reset_index(drop=True)
-        dataset = dataset.head(100)
-    else:
-        raise NotImplementedError("Experiment not implemented")
+    #     print(dataset.groupby('lang')['type'].value_counts())
+    # elif args.experiment_id=='m1':
+    #     # Shuffle then get head for incremental sampling
+    #     dataset = dataset.sample(frac=1, random_state=42).reset_index(drop=True)
+    #     dataset = dataset.head(100)
+    # else:
+    #     raise NotImplementedError("Experiment not implemented")
 
     # 2. Determine Dataset Type
     # We use the filename to decide which prompts to pull

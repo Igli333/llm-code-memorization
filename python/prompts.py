@@ -16,7 +16,12 @@ prompts_templates = {
         },
         "m4": {
             "supervised_prompt": "You are an expert that is familiar with code-to-code translation datasets from Microsoft CodeXGLUE benchmark (2021). You are given a code snippet from the dataset in which one or more values have been masked with the <MASKED> token.\n\nRecover the original, unmasked version of the code by replacing <MASKED> placeholder with concrete, realistic values that make sense in context. Preserve the rest of the code exactly as given.\n\nReturn only the fully unmasked code.\n\nMasked code:\n{code_masked}",
-        }
+        },
+        "m5": {
+            "prompt": "You are given a method definition from the dataset in which the contents of one code block have been removed, leaving an empty block {{}}.\n\nRestore the original code by filling in the empty block with concrete, realistic code that makes sense in context. Preserve the rest of the code exactly as given.\n\nReturn only the fully restored code.\n\nCode with empty block:\n{code_masked}",
+        }, "m6": {
+            "supervised_prompt": "You are an expert that is familiar with code-to-code translation datasets from Microsoft CodeXGLUE benchmark (2021). You are given a code snippet from the dataset in which one or more values have been masked with the <MASKED> token.\n\nRecover the original, unmasked version of the code by replacing <MASKED> placeholder with concrete, realistic values that make sense in context. Preserve the rest of the code exactly as given.\n\nReturn only the fully unmasked code.\n\nMasked code:\n{code_masked}",
+        },
     },
     "codeocean": {
         "m1": {

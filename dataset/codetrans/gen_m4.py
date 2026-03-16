@@ -63,20 +63,18 @@ def process_single_line(code, parser, lang):
 # -------------------------
 # Main processing
 # -------------------------
-def process_files(cs_file, java_file, output_csv):
+def process_files(csv_file, output_csv):
     rows = []
     row_id = 1
 
-    with open(cs_file, encoding="utf-8") as f:
-        cs_lines = f.readlines()
+    df = pd.read_csv(csv_file)
 
-    with open(java_file, encoding="utf-8") as f:
-        java_lines = f.readlines()
-
-    for cs_line, java_line in zip(cs_lines, java_lines):
+    for index, row in df.iterrows():
+        java_code = row['java_code']
+        cs_code = row['cs_code']
 
         java_result = process_single_line(
-            java_line, java_parser, "java"
+            java_code, java_parser, "java"
         )
         if java_result:
             java_result["id"] = row_id
@@ -84,24 +82,23 @@ def process_files(cs_file, java_file, output_csv):
             row_id += 1
 
         cs_result = process_single_line(
-            cs_line, csharp_parser, "c#"
+            cs_code, csharp_parser, "c#"
         )
         if cs_result:
             cs_result["id"] = row_id
             rows.append(cs_result)
             row_id += 1
-    df = pd.DataFrame(rows)
-    df = df[["id", "lang", "type", "code_raw", "code_masked", "masked"]]
-    df.to_csv(output_csv, index=False)
-    return df
+    df_out = pd.DataFrame(rows)
+    df_out = df_out[["id", "lang", "type", "code_raw", "code_masked", "masked"]]
+    df_out.to_csv(output_csv, index=False)
+    return df_out
 
 
 # -------------------------
 # Run
 # -------------------------
-cs_file = "train.java-cs.txt.cs"
-java_file = "train.java-cs.txt.java"
+csv_file = "paired_codes_sampled.csv"
 output_csv = "masked_secrets.csv"
 
-df = process_files(cs_file, java_file, output_csv)
+df = process_files(csv_file, output_csv)
 print(df.head())

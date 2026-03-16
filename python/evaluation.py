@@ -11,25 +11,23 @@ from models_api import ModelApi
 # Configuration
 MODELS_API = [
     # GPT
-    "openrouter/openai/gpt-5-mini",
-    "openrouter/openai/gpt-5.2",
-
-    # GPT-oss
-    "openrouter/openai/gpt-oss-120b",
-    "openrouter/openai/gpt-oss-20b",
+    # "openrouter/openai/gpt-5-mini",
+    # "openrouter/openai/gpt-5.2",
 
     # Gemini
-    "openrouter/google/gemini-2.5-flash",
-    "openrouter/google/gemini-3-flash-preview",
+    # "openrouter/google/gemini-2.5-flash",
+    # "openrouter/google/gemini-3-flash-preview",
+    
+    # GPT-oss
+    # "openrouter/openai/gpt-oss-120b",
 
     # llama
-    "openrouter/meta-llama/llama-3.3-70b-instruct",
-    "openrouter/meta-llama/llama-4-scout",
-    "openrouter/meta-llama/llama-4-maverick",
+    #"openrouter/meta-llama/llama-3.3-70b-instruct",
+    #"openrouter/meta-llama/llama-4-maverick",
+    # "openrouter/meta-llama/llama-4-scout",
     
     # # llama
     "openrouter/qwen/qwen3-coder",
-    "openrouter/qwen/qwen3-coder-30b-a3b-instruct"
 ]
 
 MODELS_HF = [

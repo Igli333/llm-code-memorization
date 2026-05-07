@@ -2,7 +2,6 @@
 
 ## EDISS node instruction:
 
-!!Important, create a conda environment in /ediss_data/ partition, otherwise there's not enough space
 ```
 conda create --prefix=pytorch-gpu python=3.10
 ```

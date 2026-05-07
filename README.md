@@ -1,6 +1,6 @@
 # llm-code-memorization
 
-## EDISS node instruction:
+## Node instruction:
 
 ```
 conda create --prefix=pytorch-gpu python=3.10
